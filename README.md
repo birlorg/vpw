@@ -51,8 +51,6 @@ For sure, make it awesome!
 
 ### Authors or Acknowledgments
 
-*   zie@birl.org
-
 ### License
 
 This project is licensed under the MIT License
