@@ -1,0 +1,104 @@
+#!/bin/sh
+#
+# Copyright 2018 <zie@birl.org>
+#
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+# DOCS:
+#	Use Hashicorp Vault as a password store.
+# SETUP:
+#	for iTERM setup a coprocess to run vpw choose
+#
+#
+if [ -z "$VPW_PATH" ]; then
+    VPW_PATH="secret/pass/${USER}"
+fi
+VAULT_BIN="/usr/local/bin/vault"
+# for macOS instead of fzf use: https://github.com/sdegutis/choose
+CHOOSE_BIN="/usr/local/bin/choose"
+
+if [ ! -f  "$CHOOSE_BIN" ]; then
+	CHOOSE_BIN='fzf'
+fi
+
+usage() {
+	echo "usage: VPW_PATH=secret/pass/${USER}"
+	echo '  Use Hashicorp Vault KV store as a password manager'
+	echo
+	echo '	vpw list'
+	echo '		list all keys in VPW_PATH'
+	echo '	vpw put'
+	echo '		put ITEM username= password= ...'
+	echo '		puts ITEM and KV into vault.'
+	echo '	vpw delete'
+	echo '		delete ITEM'
+	echo '		deletes ITEM from vault'
+	echo '	vpw get ITEM'
+	echo '		get ITEM from VPW_PATH'
+	echo '	vpw getpw ITEM'
+	echo '		gets password: from ITEM in VPW_PATH'
+	echo '	vpw choose'
+	echo '		getpw ITEM from VPW_PATH using FZF or other chooser.'
+    echo '	vpw totp'
+    echo '		get totp codes from totp-$USER.'
+	echo ' uses vault KV store as a password manager.'
+	echo 'requires vault binary and vault login to already be done.'
+	exit 1
+}
+list() {
+	$VAULT_BIN kv list --format=yaml "${VPW_PATH}" | sed 's/- //g' | sort
+}
+put() {
+	ITEM=$2
+	$VAULT_BIN kv put "${VPW_PATH}/${ITEM}" "$3" "$4" "$5" "$6" "$7" "$8"
+}
+
+get() {
+	ITEM=$2
+	$VAULT_BIN kv get --format=yaml "${VPW_PATH}/${ITEM}"
+}
+delete() {
+	ITEM=$2
+	$VAULT_BIN kv delete "${VPW_PATH}/${ITEM}"
+}
+
+getpw() {
+	ITEM=$2
+	$VAULT_BIN kv get --format=yaml "${VPW_PATH}/${ITEM}" | grep password | sed 's/.*password: //'
+}
+
+totp() {
+    ITEM=$2
+    $VAULT_BIN read -field=code "totp-$USER/code/${ITEM}"
+}
+
+choose() {
+	ITEM=$(list | ${CHOOSE_BIN})
+	$VAULT_BIN kv get --format=yaml "${VPW_PATH}/${ITEM}" | grep password | sed 's/.*password: //'
+}
+
+#######################################################################
+
+case "$1" in
+
+list) list;;
+add) put "$@";;
+put) put "$@";;
+get) get "$@";;
+getpw) getpw "$@";;
+fzf) choose "$@";;
+choose) choose "$@";;
+delete) delete "$@";;
+totp) totp "$@";;
+*) usage;;
+esac
