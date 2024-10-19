@@ -5,8 +5,10 @@ vpw - Use Hashicorp Vault KV store as a password manager.
 
 Uses a kv secret path ($VPW_PATH) as a password manager.
 
-* * *
-
+NOTE (2024-10-19): This code is over 4 years old and is imported from an old mercurial repo.
+	It is not currently used in production(nor do I use it at all at the moment).
+	I accept PR's, Issues, etc but I make zero promises.
+	It's unknown if it will work with kv2, but it did work in production with kv1.
 
 ### List of features
 
@@ -37,7 +39,7 @@ winnerpassword
 
 ### Download & Installation
 
-```shell 
+```shell
 $ curl -o /usr/local/bin/vpw -L -L https://hg.sr.ht/~zie/vpw/raw/default/vpw
 ```
 or git clone and run `make install` to symlink to /usr/local/bin
